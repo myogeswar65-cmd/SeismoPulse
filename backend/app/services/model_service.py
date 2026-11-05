@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import torch
+from huggingface_hub import hf_hub_download
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
@@ -15,13 +16,14 @@ from src.seismopulse.inference.phase_picker import (
     DEFAULT_S_THRESHOLD,
 )
 
-# Use a configurable checkpoint path.
-# If no environment variable is provided, use the local project checkpoint.
-CHECKPOINT = Path(
-    os.getenv(
-        "SEISMOPULSE_MODEL_PATH",
-        str(ROOT / "experiments" / "checkpoints" / "phase_net_best.pt")
-    )
+HF_MODEL_REPO = os.getenv(
+    "HF_MODEL_REPO",
+    "MrYogi7/seismopulse-private-model"
+)
+
+HF_MODEL_FILENAME = os.getenv(
+    "HF_MODEL_FILENAME",
+    "phase_net_best.pt"
 )
 
 
@@ -31,15 +33,54 @@ class SeismoPulseService:
         self.model = None
         self.checkpoint_epoch = None
 
-    def load_model(self):
-        if not CHECKPOINT.is_file():
-            raise FileNotFoundError(
-                "SeismoPulse model checkpoint is unavailable. "
-                "Check the configured model path."
+    def _resolve_checkpoint_path(self):
+        # 1. Use an explicitly configured local model path.
+        configured_path = os.getenv("SEISMOPULSE_MODEL_PATH")
+
+        if configured_path:
+            checkpoint_path = Path(configured_path)
+
+            if not checkpoint_path.is_file():
+                raise FileNotFoundError(
+                    f"Configured model checkpoint not found: {checkpoint_path}"
+                )
+
+            return checkpoint_path
+
+        # 2. Download the private model from Hugging Face.
+        hf_token = os.getenv("HF_TOKEN")
+
+        if hf_token:
+            print("Downloading private SeismoPulse model from Hugging Face...")
+
+            checkpoint_path = hf_hub_download(
+                repo_id=HF_MODEL_REPO,
+                filename=HF_MODEL_FILENAME,
+                token=hf_token
             )
 
+            return Path(checkpoint_path)
+
+        # 3. Fall back to the local checkpoint.
+        local_checkpoint = (
+            ROOT / "experiments" / "checkpoints" / "phase_net_best.pt"
+        )
+
+        if local_checkpoint.is_file():
+            return local_checkpoint
+
+        raise FileNotFoundError(
+            "SeismoPulse model checkpoint is unavailable. "
+            "Configure SEISMOPULSE_MODEL_PATH or HF_TOKEN."
+        )
+
+    def load_model(self):
+        checkpoint_path = self._resolve_checkpoint_path()
+
+        print(f"Loading SeismoPulse checkpoint: {checkpoint_path}")
+
         checkpoint = torch.load(
-            CHECKPOINT,
+            checkpoint_path,
             map_location="cpu",
             weights_only=False
         )
