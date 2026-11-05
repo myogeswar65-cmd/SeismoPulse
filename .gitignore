@@ -1,0 +1,57 @@
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Datasets and archives
+data/
+datasets/
+*.zip
+*.h5
+*.hdf5
+*.mseed
+
+# Model checkpoints
+*.pt
+*.pth
+*.onnx
+*.ckpt
+checkpoints/
+
+# Experiment outputs
+mlruns/
+runs/
+outputs/
+logs/
+experiments/
+
+# IDE
+.vscode/
+.idea/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
+# Generated Python package metadata
+*.egg-info/

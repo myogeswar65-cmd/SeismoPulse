@@ -1,0 +1,14 @@
+
+.venv/
+venv/
+__pycache__/
+*.pyc
+.git/
+.pytest_cache/
+runs/
+datasets/
+data/
+experiments/
+.ipynb_checkpoints/
+.env
+.env.*

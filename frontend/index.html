@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SeismoPulse | Seismic Analysis</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#e9edf0;color:#242b32;font:13px Arial,sans-serif}
+button,select,input{font:inherit}
+button,select{cursor:pointer}
+
+header{
+  height:48px;background:#f8f9fa;border:1px solid #c6cbd0;
+  display:flex;align-items:center;padding:0 14px;gap:18px
+}
+.brand{font-size:20px;font-weight:bold;color:#126b83}
+.brand span{color:#27333c}
+.connection{margin-left:auto;color:#15965d;font-weight:bold}
+
+.layout{
+  display:grid;grid-template-columns:250px minmax(0,1fr);
+  gap:10px;padding:10px;height:calc(100vh - 48px)
+}
+.sidebar,.workspace{
+  background:#f8f9fa;border:1px solid #c4c9ce;
+  box-shadow:0 1px 5px #0002;min-height:0
+}
+.sidebar{padding:14px;overflow-y:auto}
+.workspace{
+  display:flex;flex-direction:column;min-width:0;
+  overflow-y:auto;overflow-x:hidden
+}
+
+.event-time{font-size:17px;font-weight:bold}
+.muted{color:#69737d}
+.event-tag{
+  display:inline-block;background:#e87528;color:white;
+  padding:5px 10px;border-radius:3px
+}
+.event-title{font-size:17px;font-weight:bold;margin:12px 0 5px}
+.info-row{
+  display:flex;justify-content:space-between;
+  padding:8px 0;border-bottom:1px solid #ddd;gap:8px
+}
+.info-row strong{font-weight:bold;text-align:right}
+
+.tabs{
+  display:flex;align-items:center;gap:4px;padding:8px 12px;
+  border-bottom:1px solid #c6cbd0;flex-wrap:wrap
+}
+.tab{
+  padding:7px 11px;background:#e1e3e5;
+  border:1px solid #c3c6c9;border-radius:4px
+}
+.tab.active{background:white;font-weight:bold}
+
+.toolbar{
+  display:flex;align-items:center;gap:7px;padding:9px 12px;
+  border-bottom:1px solid #c6cbd0;flex-wrap:wrap
+}
+.toolbar select,.toolbar input{
+  height:29px;border:1px solid #b9bec4;background:#fff;padding:3px 8px
+}
+.component{padding:7px 12px;border:0;color:white;border-radius:3px}
+.z{background:#df3333}
+.n{background:#1b9b68}
+.e{background:#2587c8}
+.spacer{flex:1}
+.action{
+  border:1px solid #bdc3c9;background:#f7f8f9;
+  padding:7px 12px;border-radius:4px
+}
+.action.primary{background:#178b5a;color:white}
+.action:disabled{opacity:.6;cursor:wait}
+
+.chart-area{
+  padding:10px;flex:1 0 300px;min-height:300px;
+  display:flex;flex-direction:column
+}
+.chart-heading{font-weight:bold;padding:2px 4px 8px}
+canvas{display:block;width:100%;background:#fff}
+#mainChart{flex:1;min-height:230px;border:1px solid #d4d7da}
+
+.station-area{height:220px;flex-shrink:0;padding:0 10px 10px}
+.station-heading{
+  height:26px;padding:5px 4px;font-weight:bold;
+  border-top:1px solid #ccd1d4
+}
+#stationChart{height:calc(100% - 26px);border:1px solid #d4d7da}
+
+.bottom-bar{
+  min-height:32px;background:#eef0f1;border-top:1px solid #c6cbd0;
+  padding:8px 13px;color:#64717c;font-size:11px
+}
+input[type=file]{display:none}
+#status{color:#526271}
+
+.live-map-panel{
+  margin:10px 10px 0;padding:10px;background:#fff;
+  border:1px solid #d4d9dd;flex-shrink:0
+}
+.live-map-heading{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:8px;margin-bottom:8px
+}
+.live-map-heading strong{font-size:14px}
+.map-actions{display:flex;align-items:center;gap:10px}
+#feedStatus{font-size:11px;color:#64717c}
+#earthquakeMap{
+  height:300px;width:100%;border:1px solid #d4d9dd;z-index:1
+}
+.feed-content{
+  display:grid;grid-template-columns:minmax(0,1fr) 300px;
+  gap:10px;margin-top:9px
+}
+.feed-list{
+  max-height:180px;overflow-y:auto;border:1px solid #e0e3e6
+}
+.feed-event{
+  display:block;width:100%;padding:8px;text-align:left;
+  border:0;border-bottom:1px solid #e6e8ea;
+  background:#fff;cursor:pointer
+}
+.feed-event:hover{background:#f0f5f7}
+.feed-event strong{display:block;margin-bottom:3px}
+.feed-event small{color:#68747e}
+.feed-detail{
+  padding:10px;background:#f4f6f7;
+  border:1px solid #e0e3e6;font-size:12px;line-height:1.6;
+  overflow-wrap:anywhere
+}
+.feed-detail a{color:#087c9b}
+.map-disclaimer{
+  margin-top:8px;font-size:10px;color:#69737d;line-height:1.5
+}
+
+.prediction-area{
+  padding:12px;
+  border-top:1px solid #ccd1d4;
+  background:#f1f4f5;
+  flex-shrink:0;
+}
+.prediction-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.prediction-heading strong{font-size:14px}
+#predictionSource{font-size:11px;color:#69737d}
+.prediction-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;
+}
+.prediction-card{
+  padding:12px;
+  background:#fff;
+  border:1px solid #d4d9dd;
+  border-radius:4px;
+  min-width:0;
+}
+.prediction-label{
+  font-size:11px;
+  font-weight:bold;
+  color:#69737d;
+  margin-bottom:9px;
+}
+.prediction-value{
+  font-size:19px;
+  font-weight:bold;
+  color:#26343d;
+  margin-bottom:9px;
+}
+.prediction-detail{
+  font-size:11px;
+  color:#596772;
+  margin-top:6px;
+  overflow-wrap:anywhere;
+}
+.prediction-note{
+  font-size:10px;
+  color:#69737d;
+  margin-top:10px;
+  line-height:1.5;
+}
+
+.performance-area{
+  padding:10px 12px 14px;border-top:1px solid #ccd1d4;
+  background:#f8f9fa;flex-shrink:0
+}
+.performance-heading{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;flex-wrap:wrap;margin-bottom:10px
+}
+.performance-heading strong{font-size:14px}
+.performance-subtitle{font-size:11px;color:#69737d}
+.metric-grid{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px
+}
+.metric-card{
+  background:#fff;border:1px solid #d4d9dd;
+  border-radius:4px;padding:10px;min-width:0
+}
+.metric-label{font-size:11px;color:#69737d;margin-bottom:6px}
+.metric-value{font-size:21px;font-weight:bold;color:#26343d}
+.metric-detail{font-size:10px;color:#69737d;margin-top:4px;line-height:1.4}
+.performance-table{
+  width:100%;border-collapse:collapse;margin-top:10px;
+  background:#fff;font-size:11px
+}
+.performance-table th,.performance-table td{
+  padding:8px;text-align:left;border:1px solid #d9dde0
+}
+.performance-table th{background:#eef1f3;font-weight:bold}
+.performance-note{
+  font-size:10px;line-height:1.5;color:#64717c;margin:9px 2px 0
+}
+
+@media(max-width:850px){
+  .layout{grid-template-columns:1fr;height:auto}
+  .sidebar{max-height:360px}
+  .workspace{min-height:1100px}
+  .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .feed-content{grid-template-columns:1fr}
+  .prediction-grid{grid-template-columns:1fr}
+  #earthquakeMap{height:260px}
+}
+@media(max-width:480px){
+  .metric-grid{grid-template-columns:1fr 1fr}
+  .metric-value{font-size:18px}
+  .performance-table{font-size:10px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">Seismo<span>Pulse</span></div>
+  <span>Seismic Waveform Analysis</span>
+  <span class="connection" id="connection">● Connecting</span>
+</header>
+
+<div class="layout">
+
+<aside class="sidebar">
+
+  <div class="event-time" id="eventTime">NO WAVEFORM LOADED</div>
+  <p class="muted" id="eventAge">Load a waveform to begin analysis</p>
+
+  <div class="event-title" id="magnitude">Not calculated</div>
+  <span class="event-tag" id="eventType">NO WAVEFORM</span>
+
+  <p><strong id="eventLocation">No waveform loaded</strong></p>
+  <p><strong>Depth:</strong> <span id="depth">Not calculated</span></p>
+
+  <hr>
+
+  <div class="info-row">
+    <span>Input source</span>
+    <strong id="inputSource">None</strong>
+  </div>
+
+  <div class="info-row">
+    <span>Analysis status</span>
+    <strong id="analysisStatus">Waiting</strong>
+  </div>
+
+  <div class="info-row">
+    <span>Station</span>
+    <strong id="stationName">STATION-01</strong>
+  </div>
+
+  <div class="info-row">
+    <span>Sample rate</span>
+    <strong id="sampleRate">100 Hz</strong>
+  </div>
+
+  <div class="info-row">
+    <span>Duration</span>
+    <strong id="duration">-- s</strong>
+  </div>
+
+  <div class="info-row">
+    <span>Detected phases</span>
+    <strong id="phaseCount">0</strong>
+  </div>
+
+  <div class="info-row">
+    <span>P confidence</span>
+    <strong id="sideP">--</strong>
+  </div>
+
+  <div class="info-row">
+    <span>S confidence</span>
+    <strong id="sideS">--</strong>
+  </div>
+
+  <div class="info-row">
+    <span>RMS amplitude</span>
+    <strong id="rms">--</strong>
+  </div>
+
+  <hr>
+
+  <p><strong>Model</strong></p>
+  <p id="modelName" class="muted">PhaseNet-inspired</p>
+
+  <p><strong>Checkpoint</strong></p>
+  <p id="checkpoint" class="muted">Loading...</p>
+
+  <hr>
+
+  <p><strong>External earthquake data</strong></p>
+  <p class="muted">
+    USGS reported events are displayed separately from model predictions.
+  </p>
+
+</aside>
+
+<section class="workspace">
+
+  <div class="tabs">
+    <button class="tab active">Location</button>
+    <button class="tab">Magnitudes</button>
+    <button class="tab">Events</button>
+    <button class="tab">Settings</button>
+    <span class="spacer"></span>
+    <span id="status">Ready</span>
+  </div>
+
+  <div class="toolbar">
+    <strong>Phases</strong>
+
+    <label><input type="checkbox" id="showP" checked> P</label>
+    <label><input type="checkbox" id="showS" checked> S</label>
+
+    <select id="filter">
+      <option value="none">No filter</option>
+      <option value="mean">Remove mean</option>
+    </select>
+
+    <button class="component z">Z</button>
+    <button class="component n">1 (N)</button>
+    <button class="component e">2 (E)</button>
+
+    <select id="station">
+      <option>STATION-01</option>
+    </select>
+
+    <button class="action"
+      onclick="document.getElementById('file').click()">
+      Load waveform
+    </button>
+
+    <input type="file" id="file" accept=".json">
+
+    <button class="action" id="demoButton" onclick="loadDemo()">Demo</button>
+
+    <button class="action" id="validationButton" onclick="loadValidation()">Validation</button>
+
+    <button class="action primary" id="predict" onclick="predict()">
+      Run picker
+    </button>
+  </div>
+
+  <!-- USGS EARTHQUAKE MAP -->
+  <section class="live-map-panel">
+
+    <div class="live-map-heading">
+      <strong>USGS Live Earthquake Map</strong>
+
+      <div class="map-actions">
+        <span id="feedStatus">Loading earthquake feed...</span>
+
+        <button class="action" id="refreshFeed"
+          onclick="refreshEarthquakes()">
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <div id="earthquakeMap"></div>
+
+    <div class="feed-content">
+
+      <div>
+        <strong>Recent reported earthquakes</strong>
+
+        <div id="earthquakeList" class="feed-list">
+          <div class="feed-event">Loading reported events...</div>
+        </div>
+      </div>
+
+      <div>
+        <strong>Selected USGS event</strong>
+
+        <div id="earthquakeDetail" class="feed-detail">
+          Select a marker or event to view its details.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="map-disclaimer">
+      Source: USGS Earthquake Hazards Program. These are externally
+      reported earthquake events, not SeismoPulse detections or predictions.
+      Map tiles © OpenStreetMap contributors.
+    </div>
+
+  </section>
+
+  <!-- WAVEFORM -->
+  <div class="chart-area">
+
+    <div class="chart-heading" id="chartTitle">
+      Three-component waveform · Waiting for data
+    </div>
+
+    <canvas id="mainChart"></canvas>
+
+  </div>
+
+  <!-- STATION OVERVIEW -->
+  <div class="station-area">
+
+    <div class="station-heading">Station waveform overview</div>
+
+    <canvas id="stationChart"></canvas>
+
+  </div>
+
+  <!-- P/S PREDICTION RESULTS -->
+  <section class="prediction-area">
+
+    <div class="prediction-heading">
+      <strong>Current Waveform · Phase Detection Results</strong>
+      <span id="predictionSource">Waiting for analysis</span>
+    </div>
+
+    <div class="prediction-grid">
+
+      <div class="prediction-card">
+        <div class="prediction-label">P-WAVE</div>
+        <div class="prediction-value" id="pDetection">Not analyzed</div>
+        <div class="prediction-detail" id="pArrival">Arrival: --</div>
+        <div class="prediction-detail" id="pConfidence">Confidence: --</div>
+        <div class="prediction-detail" id="pThreshold">Threshold: --</div>
+      </div>
+
+      <div class="prediction-card">
+        <div class="prediction-label">S-WAVE</div>
+        <div class="prediction-value" id="sDetection">Not analyzed</div>
+        <div class="prediction-detail" id="sArrival">Arrival: --</div>
+        <div class="prediction-detail" id="sConfidence">Confidence: --</div>
+        <div class="prediction-detail" id="sThreshold">Threshold: --</div>
+      </div>
+
+      <div class="prediction-card">
+        <div class="prediction-label">OVERALL ANALYSIS</div>
+        <div class="prediction-value" id="predictionStatus">Waiting</div>
+        <div class="prediction-detail" id="predictionCount">Detected phases: 0</div>
+        <div class="prediction-detail" id="predictionDuration">Duration: --</div>
+        <div class="prediction-detail" id="predictionModel">Model: PhaseNet-inspired</div>
+      </div>
+
+    </div>
+
+    <div class="prediction-note">
+      These results belong to the currently loaded waveform.
+      Arrival times are measured from the beginning of that waveform.
+    </div>
+
+  </section>
+
+  <!-- MODEL PERFORMANCE -->
+  <section class="performance-area" aria-labelledby="performanceTitle">
+
+    <div class="performance-heading">
+
+      <strong id="performanceTitle">
+        Model Performance · Final Test Evaluation
+      </strong>
+
+      <span class="performance-subtitle">
+        Held-out evaluation · 6,000 earthquake + 6,000 noise records
+      </span>
+
+    </div>
+
+    <div class="metric-grid">
+
+      <div class="metric-card">
+        <div class="metric-label">P-wave timing within 500 ms</div>
+        <div class="metric-value">98.38%</div>
+        <div class="metric-detail">
+          Median error: 30 ms · Coverage: 73.20%
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">S-wave timing within 500 ms</div>
+        <div class="metric-value">94.71%</div>
+        <div class="metric-detail">
+          Median error: 60 ms · Coverage: 73.42%
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">Noise pixel accuracy</div>
+        <div class="metric-value">99.984%</div>
+        <div class="metric-detail">
+          Evaluated on 6,000 noise records
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">Noise false-phase record rate</div>
+        <div class="metric-value">8.05%</div>
+        <div class="metric-detail">
+          483 of 6,000 noise records
+        </div>
+      </div>
+
+    </div>
+
+    <table class="performance-table">
+
+      <thead>
+        <tr>
+          <th>Evaluation metric</th>
+          <th>P-wave</th>
+          <th>S-wave</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td>Accepted predictions</td>
+          <td>4,392 / 6,000</td>
+          <td>4,405 / 6,000</td>
+        </tr>
+
+        <tr>
+          <td>Coverage</td>
+          <td>73.20%</td>
+          <td>73.42%</td>
+        </tr>
+
+        <tr>
+          <td>Mean timing error</td>
+          <td>85.16 ms</td>
+          <td>171.25 ms</td>
+        </tr>
+
+        <tr>
+          <td>Median timing error</td>
+          <td>30 ms</td>
+          <td>60 ms</td>
+        </tr>
+
+        <tr>
+          <td>90th-percentile timing error</td>
+          <td>170 ms</td>
+          <td>340 ms</td>
+        </tr>
+
+        <tr>
+          <td>Within 500 ms (accepted picks only)</td>
+          <td>98.38%</td>
+          <td>94.71%</td>
+        </tr>
+      </tbody>
+
+    </table>
+
+    <div class="performance-note">
+      Both P and S phases were detected and correctly ordered in 58.37%
+      of earthquake records.
+
+      Thresholds: P = 0.30, S = 0.30 (calibrated on validation data).
+
+      Timing accuracy is calculated only for accepted predictions;
+      coverage is reported separately.
+
+      This is a research prototype, not an operational earthquake
+      early-warning system.
+    </div>
+
+  </section>
+
+  <div class="bottom-bar">
+    SeismoPulse Research Prototype · PhaseNet-inspired ·
+    Not an operational earthquake early-warning system
+  </div>
+
+</section>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+const API = "";
+
+let waveform = null;
+let sampleRate = 100;
+let prediction = null;
+let demoStations = [];
+
+let phaseMarkers = {p:null,s:null};
+
+const mainCanvas = document.getElementById("mainChart");
+const stationCanvas = document.getElementById("stationChart");
+
+// --------------------------------------------------
+// USGS EARTHQUAKE MAP
+// --------------------------------------------------
+
+const USGS_FEED =
+  "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
+
+let earthquakeMap = null;
+let earthquakeLayer = null;
+let earthquakeEvents = [];
+
+function initializeEarthquakeMap(){
+
+  if(typeof L === "undefined"){
+    document.getElementById("feedStatus").textContent =
+      "Map library unavailable. Check internet connection.";
+    return;
+  }
+
+  earthquakeMap = L.map("earthquakeMap").setView([20,78],2);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+    maxZoom:18,
+    attribution:"&copy; OpenStreetMap contributors"
+  }).addTo(earthquakeMap);
+
+  earthquakeLayer = L.layerGroup().addTo(earthquakeMap);
+
+  setTimeout(()=>{
+    earthquakeMap.invalidateSize();
+  },300);
+
+}
+
+function formatEarthquakeTime(timestamp){
+
+  if(!timestamp) return "Time unavailable";
+
+  return new Date(timestamp).toLocaleString();
+
+}
+
+function selectEarthquake(event){
+
+  const p = event.properties || {};
+  const coordinates = event.geometry.coordinates;
+
+  const detail = document.getElementById("earthquakeDetail");
+
+  detail.replaceChildren();
+
+  const lines = [
+    ["Magnitude",p.mag == null ? "Not reported" : p.mag],
+    ["Location",p.place || "Unknown"],
+    ["Depth",coordinates[2] + " km"],
+    ["Latitude",coordinates[1].toFixed(4)],
+    ["Longitude",coordinates[0].toFixed(4)],
+    ["Time",formatEarthquakeTime(p.time)]
+  ];
+
+  lines.forEach(([label,value])=>{
+
+    const line = document.createElement("div");
+
+    const strong = document.createElement("strong");
+    strong.textContent = label + ": ";
+
+    line.append(
+      strong,
+      document.createTextNode(String(value))
+    );
+
+    detail.appendChild(line);
+
+  });
+
+  if(p.url){
+
+    const link = document.createElement("a");
+
+    link.href = p.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "Open official USGS event";
+
+    detail.appendChild(document.createElement("br"));
+    detail.appendChild(link);
+
+  }
+
+  document.querySelectorAll(".feed-event").forEach(button=>{
+
+    button.style.background =
+      button.dataset.eventId === event.id ? "#e8f2f5" : "#fff";
+
+  });
+
+}
+
+function displayEarthquakes(features){
+
+  earthquakeEvents = features || [];
+
+  earthquakeLayer.clearLayers();
+
+  const list = document.getElementById("earthquakeList");
+
+  list.replaceChildren();
+
+  earthquakeEvents.forEach(event=>{
+
+    const p = event.properties || {};
+    const coords = event.geometry?.coordinates;
+
+    if(!coords || coords.length < 3) return;
+
+    const longitude = coords[0];
+    const latitude = coords[1];
+
+    const magnitude = Number(p.mag);
+
+    const safeMagnitude =
+      Number.isFinite(magnitude) ? magnitude : 0;
+
+    const marker = L.circleMarker(
+      [latitude,longitude],
+      {
+        radius:Math.max(5,Math.min(15,4+safeMagnitude*1.5)),
+        color:"#a51e28",
+        weight:1,
+        fillColor:"#ed4444",
+        fillOpacity:0.72
+      }
+    ).addTo(earthquakeLayer);
+
+    const popup = document.createElement("div");
+
+    const title = document.createElement("strong");
+    title.textContent =
+      "M" + (p.mag == null ? "?" : Number(p.mag).toFixed(1));
+
+    const location = document.createElement("div");
+    location.textContent = p.place || "Unknown location";
+
+    const time = document.createElement("small");
+    time.textContent = formatEarthquakeTime(p.time);
+
+    popup.append(title,location,time);
+
+    marker.bindPopup(popup);
+
+    marker.on("click",()=>{
+      selectEarthquake(event);
+    });
+
+    const button = document.createElement("button");
+
+    button.className = "feed-event";
+    button.dataset.eventId = event.id;
+
+    const heading = document.createElement("strong");
+
+    heading.textContent =
+      "M" + (p.mag == null ? "?" : Number(p.mag).toFixed(1)) +
+      " · " + (p.place || "Unknown location");
+
+    const subtitle = document.createElement("small");
+    subtitle.textContent = formatEarthquakeTime(p.time);
+
+    button.append(heading,subtitle);
+
+    button.addEventListener("click",()=>{
+
+      earthquakeMap.setView([latitude,longitude],6);
+
+      marker.openPopup();
+
+      selectEarthquake(event);
+
+    });
+
+    list.appendChild(button);
+
+  });
+
+  if(!list.children.length){
+
+    const empty = document.createElement("div");
+
+    empty.className = "feed-event";
+    empty.textContent =
+      "No earthquake events in the current feed.";
+
+    list.appendChild(empty);
+
+  }
+
+  document.getElementById("feedStatus").textContent =
+    earthquakeEvents.length +
+    " reported events · Updated " +
+    new Date().toLocaleTimeString();
+
+  if(earthquakeEvents.length){
+
+    selectEarthquake(earthquakeEvents[0]);
+
+  }else{
+
+    document.getElementById("earthquakeDetail").textContent =
+      "No events available in the current feed.";
+
+  }
+
+}
+
+async function refreshEarthquakes(){
+
+  const status = document.getElementById("feedStatus");
+  const button = document.getElementById("refreshFeed");
+
+  button.disabled = true;
+  status.textContent = "Refreshing USGS data...";
+
+  try{
+
+    const response = await fetch(
+      USGS_FEED,
+      {cache:"no-store"}
+    );
+
+    if(!response.ok){
+      throw Error("USGS feed returned HTTP " + response.status);
+    }
+
+    const data = await response.json();
+
+    if(!Array.isArray(data.features)){
+      throw Error("Unexpected USGS feed format");
+    }
+
+    displayEarthquakes(data.features);
+
+  }catch(error){
+
+    status.textContent = "Feed unavailable: " + error.message;
+
+  }finally{
+
+    button.disabled = false;
+
+  }
+
+}
+
+initializeEarthquakeMap();
+refreshEarthquakes();
+
+setInterval(()=>{
+
+  if(!document.hidden){
+    refreshEarthquakes();
+  }
+
+},60000);
+
+// --------------------------------------------------
+// WAVEFORM CANVAS
+// --------------------------------------------------
+
+function resizeCanvas(canvas){
+
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = Math.max(1,Math.floor(rect.width*dpr));
+  canvas.height = Math.max(1,Math.floor(rect.height*dpr));
+
+  const ctx = canvas.getContext("2d");
+
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  return {ctx,w:rect.width,h:rect.height};
+
+}
+
+function drawTrace(
+  ctx,data,x,y,width,height,color,label,markers=true
+){
+
+  ctx.fillStyle = color;
+  ctx.font = "12px Arial";
+  ctx.fillText(label,8,y+15);
+
+  ctx.strokeStyle = "#e3e6e8";
+  ctx.beginPath();
+  ctx.moveTo(x,y+height/2);
+  ctx.lineTo(x+width,y+height/2);
+  ctx.stroke();
+
+  if(!data || !data.length) return;
+
+  let max = 0;
+
+  const stride = Math.max(1,Math.ceil(data.length/width));
+
+  for(let i=0;i<data.length;i+=stride){
+
+    max = Math.max(max,Math.abs(data[i]||0));
+
+  }
+
+  max = max || 1;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+
+  let started = false;
+
+  for(let i=0;i<data.length;i+=stride){
+
+    const px = x+(i/data.length)*width;
+    const py = y+height/2-(data[i]/max)*(height*.39);
+
+    if(!started){
+      ctx.moveTo(px,py);
+      started = true;
+    }else{
+      ctx.lineTo(px,py);
+    }
+
+  }
+
+  ctx.stroke();
+
+  if(markers){
+
+    drawMarker(
+      ctx,phaseMarkers.p,data.length,x,width,y,height,
+      "P","#16a34a",
+      document.getElementById("showP").checked
+    );
+
+    drawMarker(
+      ctx,phaseMarkers.s,data.length,x,width,y,height,
+      "S","#dc3030",
+      document.getElementById("showS").checked
+    );
+
+  }
+
+}
+
+function drawMarker(
+  ctx,sample,length,x,width,y,height,label,color,visible
+){
+
+  if(sample===null || !visible || !length) return;
+
+  const px = x+(sample/length)*width;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(px,y);
+  ctx.lineTo(px,y+height);
+  ctx.stroke();
+
+  ctx.fillStyle = color;
+  ctx.font = "bold 12px Arial";
+  ctx.fillText(label,px+3,y+13);
+
+}
+
+function drawMain(){
+
+  const {ctx,w,h} = resizeCanvas(mainCanvas);
+
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0,0,w,h);
+
+  if(!waveform){
+
+    ctx.fillStyle = "#65717d";
+    ctx.font = "15px Arial";
+
+    ctx.fillText(
+      "Load a waveform or select Demo to view seismic traces.",
+      20,40
+    );
+
+    return;
+
+  }
+
+  const left = 65;
+  const right = 18;
+  const top = 8;
+
+  const plotW = w-left-right;
+  const rowH = (h-top-15)/3;
+
+  const colors = ["#8d7774","#829b87","#777b98"];
+
+  const names = [
+    "HHZ · Vertical (Z)",
+    "HHN · North (N)",
+    "HHE · East (E)"
+  ];
+
+  for(let c=0;c<3;c++){
+
+    const y = top+c*rowH;
+
+    drawTrace(
+      ctx,waveform[c],left,y,plotW,rowH-4,
+      colors[c],names[c]
+    );
+
+    ctx.fillStyle = "#606b75";
+    ctx.font = "11px Arial";
+
+    ctx.fillText("Amplitude",4,y+rowH/2);
+    ctx.fillText("0s",left,y+rowH-2);
+
+    ctx.fillText(
+      (waveform[c].length/sampleRate).toFixed(1)+"s",
+      left+plotW-35,y+rowH-2
+    );
+
+  }
+
+}
+
+function drawStations(){
+
+  const {ctx,w,h} = resizeCanvas(stationCanvas);
+
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0,0,w,h);
+
+  const rows = demoStations.length ?
+    demoStations : [waveform];
+
+  if(!rows[0]){
+
+    ctx.fillStyle = "#65717d";
+    ctx.font = "13px Arial";
+
+    ctx.fillText(
+      "Station traces will appear here after loading a waveform.",
+      15,30
+    );
+
+    return;
+
+  }
+
+  const rowH = h/Math.min(rows.length,5);
+
+  rows.slice(0,5).forEach((row,i)=>{
+
+    const data = Array.isArray(row[0]) ? row[0] : row;
+
+    drawTrace(
+      ctx,data,110,i*rowH,w-120,rowH-2,
+      ["#6e819c","#788c82","#877a98","#8b8b70","#788d9d"][i],
+      demoStations.length ? "DEMO-"+(i+1) : "STATION-01",
+      false
+    );
+
+  });
+
+}
+
+function redraw(){
+
+  drawMain();
+  drawStations();
+
+}
+
+window.addEventListener("resize",redraw);
+
+document.getElementById("showP").addEventListener("change",redraw);
+document.getElementById("showS").addEventListener("change",redraw);
+
+// --------------------------------------------------
+// WAVEFORM SIDEBAR STATUS
+// --------------------------------------------------
+
+function updateWaveformPanel(source,description){
+
+  document.getElementById("eventTime").textContent =
+    "WAVEFORM READY";
+
+  document.getElementById("eventAge").textContent =
+    description;
+
+  document.getElementById("magnitude").textContent =
+    "Not calculated";
+
+  document.getElementById("eventType").textContent =
+    source;
+
+  document.getElementById("eventLocation").textContent =
+    description;
+
+  document.getElementById("depth").textContent =
+    "Not calculated";
+
+  document.getElementById("inputSource").textContent =
+    source;
+
+  document.getElementById("analysisStatus").textContent =
+    "Loaded — not analyzed";
+
+  document.getElementById("phaseCount").textContent = "0";
+
+  document.getElementById("sideP").textContent = "--";
+  document.getElementById("sideS").textContent = "--";
+
+  document.getElementById("duration").textContent =
+    (waveform[0].length/sampleRate).toFixed(2)+" s";
+
+  document.getElementById("sampleRate").textContent =
+    sampleRate + " Hz";
+
+  document.getElementById("status").textContent =
+    "Waveform loaded";
+
+}
+
+// --------------------------------------------------
+// INDIVIDUAL P/S PREDICTION RESULTS
+// --------------------------------------------------
+
+function formatArrival(phase){
+
+  if(!phase.detected){
+    return "Arrival: Not detected";
+  }
+
+  const seconds = phase.time_seconds !== null &&
+                  phase.time_seconds !== undefined
+    ? Number(phase.time_seconds)
+    : Number(phase.sample) / sampleRate;
+
+  return "Arrival: " + seconds.toFixed(3) + " s";
+
+}
+
+function updatePhaseCard(prefix,phase){
+
+  const detected = Boolean(phase.detected);
+
+  document.getElementById(prefix+"Detection").textContent =
+    detected ? "DETECTED" : "NOT DETECTED";
+
+  document.getElementById(prefix+"Detection").style.color =
+    detected ? "#15965d" : "#c0392b";
+
+  document.getElementById(prefix+"Arrival").textContent =
+    formatArrival(phase);
+
+  document.getElementById(prefix+"Confidence").textContent =
+    "Confidence: " +
+    (Number(phase.confidence)*100).toFixed(2) + "%";
+
+  document.getElementById(prefix+"Threshold").textContent =
+    "Threshold: " +
+    (phase.threshold == null
+      ? "Not provided"
+      : Number(phase.threshold).toFixed(2));
+
+}
+
+function resetPredictionPanel(){
+
+  document.getElementById("predictionSource").textContent =
+    "Waiting for analysis";
+
+  document.getElementById("pDetection").textContent =
+    "Not analyzed";
+
+  document.getElementById("sDetection").textContent =
+    "Not analyzed";
+
+  document.getElementById("pDetection").style.color = "#26343d";
+  document.getElementById("sDetection").style.color = "#26343d";
+
+  document.getElementById("pArrival").textContent = "Arrival: --";
+  document.getElementById("sArrival").textContent = "Arrival: --";
+
+  document.getElementById("pConfidence").textContent = "Confidence: --";
+  document.getElementById("sConfidence").textContent = "Confidence: --";
+
+  document.getElementById("pThreshold").textContent = "Threshold: --";
+  document.getElementById("sThreshold").textContent = "Threshold: --";
+
+  document.getElementById("predictionStatus").textContent = "Waiting";
+  document.getElementById("predictionCount").textContent = "Detected phases: 0";
+  document.getElementById("predictionDuration").textContent = "Duration: --";
+
+}
+
+// Displays predictions from either the live API or saved demo.
+function displayPredictionResults(result){
+
+  const p = result.p_wave;
+  const s = result.s_wave;
+
+  updatePhaseCard("p",p);
+  updatePhaseCard("s",s);
+
+  const count =
+    Number(p.detected) + Number(s.detected);
+
+  document.getElementById("predictionSource").textContent =
+    document.getElementById("inputSource").textContent + " waveform";
+
+  document.getElementById("predictionStatus").textContent =
+    count === 2 ? "Both phases detected" :
+    count === 1 ? "One phase detected" :
+    "No confident phases";
+
+  document.getElementById("predictionCount").textContent =
+    "Detected phases: " + count + " / 2";
+
+  document.getElementById("predictionDuration").textContent =
+    "Duration: " +
+    (waveform[0].length/sampleRate).toFixed(2) + " s";
+
+  document.getElementById("predictionModel").textContent =
+    "Model: PhaseNet-inspired";
+
+}
+
+// --------------------------------------------------
+// INDEPENDENT SAVED EXAMPLES: DEMO + VALIDATION
+// --------------------------------------------------
+
+// Both buttons use this loader, but each fetches a DIFFERENT JSON file.
+// Saved predictions are displayed as stored; Run picker can independently
+// send the currently loaded waveform to the API for a fresh inference.
+// --------------------------------------------------
+// PUBLIC SAVED EXAMPLES: FRESH API INFERENCE
+// --------------------------------------------------
+
+async function loadSavedExample(filename, sourceLabel, buttonId){
+
+  const button = document.getElementById(buttonId);
+  const originalText = button.textContent;
+
+  button.disabled = true;
+  button.textContent = "Loading...";
+
+  document.getElementById("status").textContent =
+    "Loading " + sourceLabel.toLowerCase() + " waveform...";
+
+  try{
+
+    // Load only the public waveform and sample rate.
+    const response = await fetch(filename, {
+      cache: "no-store"
+    });
+
+    if(!response.ok){
+      throw Error(
+        "Could not load " + filename +
+        ". HTTP " + response.status
+      );
+    }
+
+    const saved = await response.json();
+
+    if(!Array.isArray(saved.waveform)){
+      throw Error("Invalid waveform in " + filename);
+    }
+
+    const rate = Number(saved.sample_rate_hz || 100);
+
+    if(!Number.isFinite(rate) || rate <= 0){
+      throw Error("Invalid sample rate.");
+    }
+
+    // Load and normalize the waveform.
+    sampleRate = rate;
+
+    loadWave(saved.waveform);
+
+    // Restore the correct source label after loadWave().
+    document.getElementById("inputSource").textContent =
+      sourceLabel;
+
+    document.getElementById("eventTime").textContent =
+      sourceLabel + " EARTHQUAKE EXAMPLE";
+
+    document.getElementById("eventLocation").textContent =
+      "Public demonstration waveform";
+
+    document.getElementById("eventType").textContent =
+      "READY FOR ANALYSIS";
+
+    document.getElementById("eventAge").textContent =
+      sourceLabel + " · Fresh inference pending";
+
+    document.getElementById("analysisStatus").textContent =
+      "Waveform loaded";
+
+    document.getElementById("status").textContent =
+      sourceLabel + " waveform loaded. Running fresh inference...";
+
+    document.getElementById("sampleRate").textContent =
+      sampleRate + " Hz";
+
+    document.getElementById("duration").textContent =
+      (waveform[0].length / sampleRate).toFixed(2) + " s";
+
+    document.getElementById("rms").textContent =
+      calculateRMS(waveform).toFixed(5);
+
+    document.getElementById("chartTitle").textContent =
+      sourceLabel + " · Public waveform · P/S phase arrivals";
+
+    // Run the existing API prediction function.
+    // This generates NEW predictions from the loaded waveform.
+    const predictionSucceeded = await predict();
+
+    if(!predictionSucceeded){
+      throw Error("Fresh API inference failed. Check the API status.");
+    }
+
+    document.getElementById("predictionSource").textContent =
+      sourceLabel + " · Fresh API prediction";
+
+    console.log("Public example loaded:", {
+      source: sourceLabel,
+      components: waveform.length,
+      samples: waveform[0].length,
+      sampleRate: sampleRate
+    });
+
+  }catch(error){
+
+    console.error("Saved example loading error:", error);
+
+    document.getElementById("status").textContent =
+      "Error: " + error.message;
+
+    document.getElementById("analysisStatus").textContent =
+      "Example loading failed";
+
+    alert(
+      "Could not load " +
+      sourceLabel.toLowerCase() +
+      " example: " + error.message
+    );
+
+  }finally{
+
+    button.disabled = false;
+    button.textContent = originalText;
+
+  }
+
+}
+
+function loadDemo(){
+  return loadSavedExample(
+    "demo_validation_waveform.json",
+    "DEMO",
+    "demoButton"
+  );
+}
+
+function loadValidation(){
+  return loadSavedExample(
+    "validation_waveform.json",
+    "VALIDATION",
+    "validationButton"
+  );
+}
+
+// --------------------------------------------------
+// LOAD USER WAVEFORM
+// --------------------------------------------------
+
+function loadWave(data){
+
+  if(!Array.isArray(data)||!data.length){
+    throw Error("Invalid waveform array");
+  }
+
+  if(data[0].length===3 && data.length!==3){
+
+    waveform = [0,1,2].map(c=>
+      data.map(row=>Number(row[c]))
+    );
+
+  }else if(data.length===3){
+
+    waveform = data.map(row=>row.map(Number));
+
+  }else{
+
+    throw Error("Expected (3, samples) or (samples, 3)");
+
+  }
+
+  if(waveform.some(row=>
+    !row.length || row.some(v=>!Number.isFinite(v))
+  )){
+    throw Error("Invalid waveform values");
+  }
+
+  if(!waveform.every(row=>
+    row.length===waveform[0].length
+  )){
+    throw Error("Component lengths do not match");
+  }
+
+  demoStations = [];
+  prediction = null;
+  phaseMarkers = {p:null,s:null};
+
+  resetPredictionPanel();
+
+  updateWaveformPanel(
+    "UPLOADED",
+    "User-uploaded waveform"
+  );
+
+  document.getElementById("chartTitle").textContent =
+    "UPLOADED WAVEFORM · Three-component seismic waveform";
+
+  document.getElementById("rms").textContent =
+    calculateRMS(waveform).toFixed(5);
+
+  redraw();
+
+}
+
+function calculateRMS(data){
+
+  let sum = 0;
+  let count = 0;
+
+  data.forEach(component=>{
+
+    component.forEach(value=>{
+
+      sum += value*value;
+      count++;
+
+    });
+
+  });
+
+  return count ? Math.sqrt(sum/count) : 0;
+
+}
+
+// --------------------------------------------------
+// FILE UPLOAD
+// --------------------------------------------------
+
+document.getElementById("file").addEventListener(
+  "change",
+  async e=>{
+
+    const file = e.target.files[0];
+
+    if(!file) return;
+
+    try{
+
+      const data = JSON.parse(await file.text());
+
+      // The validation JSON contains waveform and metadata.
+      // loadWave handles both (samples, 3) and (3, samples).
+      const uploadedWaveform = data.waveform || data;
+
+      loadWave(uploadedWaveform);
+
+      // Use the file's sample rate when it provides one.
+      if(data.sample_rate_hz){
+
+        sampleRate = Number(data.sample_rate_hz);
+
+        document.getElementById("sampleRate").textContent =
+          sampleRate + " Hz";
+
+        document.getElementById("duration").textContent =
+          (waveform[0].length / sampleRate).toFixed(2) + " s";
+
+      }
+
+      console.log("Uploaded waveform loaded:", {
+        components: waveform.length,
+        samples: waveform[0].length,
+        sampleRate: sampleRate
+      });
+
+    }catch(err){
+
+      console.error("Waveform upload error:",err);
+
+      alert("Could not load waveform: "+err.message);
+
+    }
+
+    e.target.value = "";
+
+  }
+);
+
+// --------------------------------------------------
+// RUN PHASE PICKER + WAVEFORM DIAGNOSTICS
+// --------------------------------------------------
+
+async function predict(){
+
+  if(!waveform){
+
+    alert("Load a waveform first.");
+
+    return false;
+
+  }
+
+  const button = document.getElementById("predict");
+
+  button.disabled = true;
+
+  document.getElementById("status").textContent =
+    "Running PhaseNet...";
+
+  document.getElementById("analysisStatus").textContent =
+    "Analyzing...";
+
+  try{
+
+    // --------------------------------------------------
+    // PREPARE API REQUEST
+    // --------------------------------------------------
+
+    const requestData = {
+      waveform: waveform,
+      sample_rate_hz: sampleRate
+    };
+
+    console.log("========== SEISMOPULSE DIAGNOSTICS ==========");
+
+    console.log("Browser waveform shape:", {
+      components: requestData.waveform.length,
+      samples: requestData.waveform[0]?.length,
+      sampleRate: requestData.sample_rate_hz
+    });
+
+    console.log(
+      "First 5 samples of each component:",
+      requestData.waveform.map(
+        component => component.slice(0,5)
+      )
+    );
+
+    console.log(
+      "Last 5 samples of each component:",
+      requestData.waveform.map(
+        component => component.slice(-5)
+      )
+    );
+
+    console.log(
+      "Browser waveform RMS:",
+      calculateRMS(requestData.waveform)
+    );
+
+    // --------------------------------------------------
+    // COMPARE WITH THE CURRENT SAVED EXAMPLE, IF APPLICABLE
+    // --------------------------------------------------
+
+    try{
+
+      const currentSource = document.getElementById("inputSource").textContent;
+      const comparisonFile =
+        currentSource === "VALIDATION" ? "validation_waveform.json" :
+        currentSource === "DEMO" ? "demo_validation_waveform.json" :
+        null;
+
+      if(!comparisonFile){
+        console.log("Uploaded waveform: no saved-example comparison required.");
+      }else{
+
+      const demoResponse = await fetch(
+        comparisonFile,
+        {cache:"no-store"}
+      );
+
+      if(demoResponse.ok){
+
+        const demo = await demoResponse.json();
+
+        const original = demo.waveform;
+
+        let expected;
+
+        if(original[0].length === 3){
+
+          expected = [0,1,2].map(c =>
+            original.map(row => Number(row[c]))
+          );
+
+        }else{
+
+          expected = original.map(row =>
+            row.map(Number)
+          );
+
+        }
+
+        let maxDifference = 0;
+        let totalDifference = 0;
+        let comparedSamples = 0;
+
+        if(
+          expected.length === requestData.waveform.length &&
+          expected[0].length === requestData.waveform[0].length
+        ){
+
+          for(let c=0;c<3;c++){
+
+            for(let i=0;i<expected[c].length;i++){
+
+              const difference = Math.abs(
+                expected[c][i] -
+                requestData.waveform[c][i]
+              );
+
+              maxDifference = Math.max(
+                maxDifference,
+                difference
+              );
+
+              totalDifference += difference;
+              comparedSamples++;
+
+            }
+
+          }
+
+          console.log("VALIDATION DEMO COMPARISON:", {
+            identical: maxDifference < 1e-7,
+            maximumDifference: maxDifference,
+            meanDifference: totalDifference / comparedSamples
+          });
+
+        }else{
+
+          console.warn(
+            "Uploaded waveform and demo have different shapes."
+          );
+
+          console.log("Expected shape:", {
+            components: expected.length,
+            samples: expected[0]?.length
+          });
+
+        }
+
+      }else{
+
+        console.warn(
+          "Could not load demo JSON for comparison. HTTP:",
+          demoResponse.status
+        );
+
+      }
+
+      }
+
+    }catch(diagnosticError){
+
+      console.warn(
+        "Saved waveform comparison failed:",
+        diagnosticError
+      );
+
+    }
+
+    // --------------------------------------------------
+    // SEND REQUEST TO API
+    // --------------------------------------------------
+
+    console.log("Sending waveform to API...");
+
+    const response = await fetch(API + "/api/predict", {
+
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify(requestData)
+
+    });
+
+    const result = await response.json();
+
+    if(!response.ok){
+
+      throw Error(
+        result.detail || "Prediction failed"
+      );
+
+    }
+
+    if(!result.p_wave || !result.s_wave){
+
+      throw Error(
+        "API response is missing P-wave or S-wave results"
+      );
+
+    }
+
+    // --------------------------------------------------
+    // DISPLAY API RESPONSE IN CONSOLE
+    // --------------------------------------------------
+
+    console.log("API P-WAVE:", result.p_wave);
+    console.log("API S-WAVE:", result.s_wave);
+    console.log("API STATUS:", result.status);
+
+    console.log("=============================================");
+
+    // --------------------------------------------------
+    // UPDATE DASHBOARD
+    // --------------------------------------------------
+
+    prediction = result;
+
+    displayPredictionResults(result);
+
+    phaseMarkers = {
+
+      p: result.p_wave.detected
+        ? result.p_wave.sample
+        : null,
+
+      s: result.s_wave.detected
+        ? result.s_wave.sample
+        : null
+
+    };
+
+    const count =
+      Number(result.p_wave.detected) +
+      Number(result.s_wave.detected);
+
+    document.getElementById("phaseCount").textContent =
+      count;
+
+    document.getElementById("sideP").textContent =
+      (result.p_wave.confidence*100).toFixed(2)+"%";
+
+    document.getElementById("sideS").textContent =
+      (result.s_wave.confidence*100).toFixed(2)+"%";
+
+    document.getElementById("eventType").textContent =
+      count ? "PHASES DETECTED" : "NO CONFIDENT PHASE";
+
+    document.getElementById("analysisStatus").textContent =
+      count ? "Analysis complete" : "No confident picks";
+
+    document.getElementById("eventAge").textContent =
+      document.getElementById("inputSource").textContent+
+      " waveform · Analysis complete";
+
+    document.getElementById("status").textContent =
+      result.status.replaceAll("_"," ");
+
+    redraw();
+
+    return true;
+
+  }catch(err){
+
+    console.error("SeismoPulse prediction error:",err);
+
+    document.getElementById("status").textContent =
+      "Error: "+err.message;
+
+    document.getElementById("analysisStatus").textContent =
+      "Prediction failed";
+
+    return false;
+
+  }finally{
+
+    button.disabled = false;
+
+  }
+
+}
+
+// --------------------------------------------------
+// API CONNECTION
+// --------------------------------------------------
+
+async function checkAPI(){
+
+  try{
+
+    const r = await fetch(API+"/api/model-info");
+
+    if(!r.ok) throw Error();
+
+    const d = await r.json();
+
+    document.getElementById("connection").textContent =
+      "● API CONNECTED";
+
+    document.getElementById("modelName").textContent =
+      d.model;
+
+    document.getElementById("checkpoint").textContent =
+      "Epoch "+d.checkpoint_epoch+" · "+d.device.toUpperCase();
+
+    document.getElementById("sampleRate").textContent =
+      d.sample_rate_hz+" Hz";
+
+    sampleRate = d.sample_rate_hz || 100;
+
+  }catch{
+
+    document.getElementById("connection").textContent =
+      "● API OFFLINE";
+
+  }
+
+}
+
+checkAPI();
+redraw();
+
+</script>
+
+</body>
+</html>
