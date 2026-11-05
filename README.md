@@ -27,7 +27,7 @@
 
 ---
 
-## 1. Overview
+##  Overview
 
 **SeismoPulse** is an AI-powered seismic waveform analysis platform designed to identify two important seismic phases: Primary (P) waves and Secondary (S) waves.
 
@@ -52,7 +52,7 @@ The project brings together deep learning, scientific signal processing, API eng
 
 ---
 
-## 2. Problem Statement
+##  Problem Statement
 
 Seismic waveform interpretation is an important component of earthquake monitoring and seismological research.
 
@@ -66,7 +66,7 @@ SeismoPulse investigates a deep learning-based approach to automate seismic phas
 
 ---
 
-## 3. System Architecture
+##  System Architecture
 
 SeismoPulse follows a modular architecture that separates the user interface, API layer, inference service, trained model and model artifact storage.
 
@@ -103,7 +103,7 @@ flowchart TD
 
 ---
 
-## 4. Deep Learning Approach
+##  Deep Learning Approach
 
 SeismoPulse uses a custom-trained, PhaseNet-inspired neural network for seismic phase detection.
 
@@ -170,7 +170,7 @@ These are the current application settings, not independently validated performa
 
 ---
 
-## 5. Technology Stack
+##  Technology Stack
 
 | Technology | Usage |
 |---|---|
@@ -187,7 +187,7 @@ These are the current application settings, not independently validated performa
 
 ---
 
-## 6. Application Features
+##  Application Features
 
 ### Interactive seismic dashboard
 
@@ -217,7 +217,7 @@ The API documentation is generated using FastAPI and OpenAPI.
 
 ---
 
-## 7. Input Data Format
+##  Input Data Format
 
 Custom waveform prediction accepts JSON input.
 
@@ -241,7 +241,7 @@ The actual API request must satisfy the application's input validation requireme
 
 ---
 
-## 8. Deployment Architecture
+##  Deployment Architecture
 
 SeismoPulse is deployed as a containerized cloud application.
 
@@ -277,7 +277,7 @@ flowchart LR
 
 ---
 
-## 9. Run Locally with Docker
+##  Run Locally with Docker
 
 ### Prerequisites
 
@@ -326,7 +326,7 @@ Replace `/path/to/phase_net_best.pt` with the actual checkpoint path on your sys
 
 ---
 
-## 10. Live Deployment
+##  Live Deployment
 
 The application is publicly deployed on Render.
 
@@ -356,7 +356,7 @@ The free hosting configuration may experience cold starts after periods of inact
 
 ---
 
-## 11. Repository Structure
+##  Repository Structure
 
 ```text
 SeismoPulse/
@@ -393,7 +393,7 @@ Training datasets, experiment outputs and model checkpoints are maintained separ
 
 ---
 
-## 12. Current Limitations
+##  Current Limitations
 
 SeismoPulse is an experimental research and engineering prototype.
 
@@ -413,7 +413,7 @@ No unsupported accuracy or real-world detection claims are made.
 
 ---
 
-## 13. Future Development
+##  Future Development
 
 Planned research and engineering directions include:
 
@@ -428,7 +428,7 @@ Planned research and engineering directions include:
 
 ---
 
-## 14. Research and Engineering Focus
+##  Research and Engineering Focus
 
 SeismoPulse brings together several areas of applied AI engineering:
 
@@ -444,7 +444,7 @@ The project is intended as a foundation for further experimentation in automated
 
 ---
 
-## 15. Author
+##  Author
 
 **Yogeswar Maddikuntla**
 
@@ -454,7 +454,7 @@ GitHub: [@myogeswar65-cmd](https://github.com/myogeswar65-cmd)
 
 ---
 
-## 16. Disclaimer
+##  Disclaimer
 
 SeismoPulse is developed for educational, research and experimental purposes.
 
